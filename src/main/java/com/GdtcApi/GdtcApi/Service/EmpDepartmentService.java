@@ -21,7 +21,6 @@ public class EmpDepartmentService implements IEmpDepartmentService {
     @Autowired
     EmpDepartmentRepo _empDepartmentRepo;
 
-
     @Async
     @Transactional // this is used for rollback means if we got error and before it changed something it will roll back
     public CompletableFuture<EmpDepartmentResponse> upsertDepartmentAsync(EmpDepartmentRequest dto) {
