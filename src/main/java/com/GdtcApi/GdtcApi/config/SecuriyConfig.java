@@ -49,7 +49,7 @@ public class SecuriyConfig {
 //                .formLogin(Customizer.withDefaults()) // it will provide default login page in web **if we are using stateless we have to comment this
 //                .httpBasic(Customizer.withDefaults()) // with this you will be able to use in postman because of this we getting username and password also
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) //this will create session each time you request something
-
+                // add our jwt filter befoore the standard username/password filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .securityContext(securityContext -> securityContext.requireExplicitSave(false)) // ensures that spring security retains the authentication context across async execution
 

@@ -90,6 +90,7 @@ import java.util.Map;
 @Configuration
 public class DataSourceConfig {
 
+    // Master datasource for user authentication
     @Value("${spring.datasource.url}")
     private String masterUrl; // e.g. jdbc:postgresql://localhost:5432/mdop
     @Value("${spring.datasource.username}")
@@ -97,6 +98,7 @@ public class DataSourceConfig {
     @Value("${spring.datasource.password}")
     private String masterPassword;
 
+    //Super user datasource for creating tenant database
     @Value("${spring.super.datasource.url}")
     private String superUserUrl; // e.g. jdbc:postgresql://localhost:5432/postgres
     @Value("${spring.super.datasource.username}")

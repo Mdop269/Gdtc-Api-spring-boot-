@@ -88,4 +88,9 @@ public class EmpDepartmentController {
     public List<EmpDepartmentResponse> getAllSyncDepartments(){
         return departmentService.getAllSyncDepartment();
     }
+
+    @PostMapping("departments/sync")
+    public EmpDepartmentResponse addSyncDepartment(@RequestBody EmpDepartmentRequest empDepartmentRequest){
+        return departmentService.addSyncDepartment(empDepartmentRequest);
+    }
 }

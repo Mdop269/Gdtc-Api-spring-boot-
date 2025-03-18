@@ -50,7 +50,6 @@ public class HibernateConfig {
     ) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource); // For “master” queries
-//        em.setPackagesToScan("com.GdtcApi.GdtcApi.Entities");
         em.setPackagesToScan("com.GdtcApi.GdtcApi.Entities");
 
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());

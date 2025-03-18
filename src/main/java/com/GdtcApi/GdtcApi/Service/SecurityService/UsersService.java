@@ -43,7 +43,7 @@ public class UsersService {
     @Qualifier("superUserJdbcTemplate")
     private JdbcTemplate superUserJdbcTemplate;
 
-
+    // values from properties for tenant DB creation
     @Value("${spring.datasource.base-url}")
     private String baseUrl; // e.g. "jdbc:postgresql://localhost:5432/"
 
@@ -58,15 +58,6 @@ public class UsersService {
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
 
-    @Transactional
-    public void AddDefaultList(List<Users> usersList) {
-        for (Users user : usersList) {
-            if (usersRepo.findByUserName(user.getUserName()) == null) {
-                user.setPassword(encoder.encode(user.getPassword()));
-                usersRepo.save(user);
-            }
-        }
-    }
 
 //    @Transactional
 //    public Users registerUser(Users users)
@@ -106,11 +97,41 @@ public class UsersService {
 //                });
 //    }
 
-    @Async
+
+    //Asynchronous upsert operation : update if exists; create otherwise
+//    @Async
+//    @Transactional
+//    public CompletableFuture<UsersResponse> upsertUsersAsync(UsersRequest dto) {
+//        return CompletableFuture.supplyAsync(() -> {
+//            // 1. Convert DTO to entity
+//            Users userEntity = UsersRequest.MapToEntity(dto);
+//
+//            // 2. See if user already in master DB
+//            Users existing = usersRepo.findByUserName(userEntity.getUserName());
+//            try {
+//                if (existing != null) {
+//                    // update password for existing user
+//                    existing.setPassword(userEntity.getPassword());
+//                    Users updated = usersRepo.save(existing);
+//                    // no need to create DB if it's already there
+//                    return UsersResponse.MapToDto(updated);
+//                } else {
+//                    // create new user in master Db
+//                    Users saved = usersRepo.save(userEntity);
+//                    // create a new dedicated database for this user
+//                    createUserDatabase(saved.getUserName());
+//                    return UsersResponse.MapToDto(saved);
+//                }
+//            } catch (Exception ex) {
+//                throw new CompletionException("Failed to upsert Users", ex);
+//            }
+//        });
+//    }
+
     @Transactional
-    public CompletableFuture<UsersResponse> upsertUsersAsync(UsersRequest dto) {
-        return CompletableFuture.supplyAsync(() -> {
-            // 1. Convert DTO
+    public UsersResponse upsertUsers(UsersRequest dto) {
+
+            // 1. Convert DTO to entity
             Users userEntity = UsersRequest.MapToEntity(dto);
 
             // 2. See if user already in master DB
@@ -123,18 +144,15 @@ public class UsersService {
                     // no need to create DB if it's already there
                     return UsersResponse.MapToDto(updated);
                 } else {
-                    // create new user
+                    // create new user in master Db
                     Users saved = usersRepo.save(userEntity);
-
-                    // create a brand new DB for him, if needed
+                    // create a new dedicated database for this user
                     createUserDatabase(saved.getUserName());
-
                     return UsersResponse.MapToDto(saved);
                 }
             } catch (Exception ex) {
                 throw new CompletionException("Failed to upsert Users", ex);
             }
-        });
     }
 
 
@@ -158,7 +176,10 @@ public class UsersService {
 //           return UsersResponse.MapToDto(saved);
 //       }
 //    }
+
+    // verifies user credentials and retuyrns a jwt token if successfull
     public String verify(UsersRequest usersRequest) {
+        // Authenticate the user using spring security
         Authentication authentication =
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(usersRequest.getUserName(), usersRequest.getPassword()));
 
@@ -177,14 +198,19 @@ public class UsersService {
 //        }
 //    }
 //
+
+    //Helper: santize the username to form a valid database name
     private String sanitizeDatabaseName(String username) {
         return username.replaceAll("[^a-zA-Z0-9_]", "_").toLowerCase();
     }
 
+    //create a new tenant database for the user
     private void createUserDatabase(String username) {
         String sanitizedDbName = sanitizeDatabaseName(username);
         try {
+            //create database using superuser connection
             superUserJdbcTemplate.execute("CREATE DATABASE " + sanitizedDbName);
+            //Initialize tables/entites using Hibernate auti-DDL
             initializeTenantSchemaViaHibernate(sanitizedDbName);
         } catch (Exception e) {
             throw new RuntimeException("Failed to create user database", e);
@@ -213,6 +239,7 @@ public class UsersService {
      * Builds a temporary EntityManagerFactory for the new DB and
      * uses hibernate.hbm2ddl.auto=update to create all your Entities/tables.
      */
+    // Creare ab EntityManagerFactory for the new DB to generate schema
     private void initializeTenantSchemaViaHibernate(String dbName) {
         // 1. Build a DataSource that points to the brand-new DB
         String jdbcUrl = baseUrl + dbName; // e.g. "jdbc:postgresql://localhost:5432/username_db"
@@ -223,7 +250,8 @@ public class UsersService {
                 .driverClassName("org.postgresql.Driver")
                 .build();
 
-        // 2. Create a LocalContainerEntityManagerFactoryBean
+        // 2. Create a Builds a temporary EntityManagerFactory for the new DB and
+        //      uses hibernate.hbm2ddl.auto=update to create all your Entities/tables.
         LocalContainerEntityManagerFactoryBean emfBean = new LocalContainerEntityManagerFactoryBean();
         emfBean.setDataSource(tenantDS);
         emfBean.setPackagesToScan("com.GdtcApi.GdtcApi.Entities");

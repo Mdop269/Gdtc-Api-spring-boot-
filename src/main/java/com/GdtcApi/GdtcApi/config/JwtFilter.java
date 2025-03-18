@@ -23,6 +23,7 @@ public class JwtFilter  extends OncePerRequestFilter {
     @Autowired
     private JWTService jwtService;
 
+    // we obtain our MyuserService bean from the spring context
     @Autowired
     ApplicationContext context;
 
@@ -39,15 +40,16 @@ public class JwtFilter  extends OncePerRequestFilter {
         }
 
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
-
+            // Load User Details and validate  token
             UserDetails userDetails = context.getBean(MyUserService.class).loadUserByUsername(username);
             if(jwtService.validateToken(token, userDetails)){
+                // If valid, set authentication in the security context Create authtoken
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                // Set tenant context
+                // Set tenant context so that our multi-tenant connection provider can use it
                 String tenantId = sanitizeDatabaseName(username);
                 TenantContext.setCurrentTenant(tenantId);
 
@@ -57,10 +59,13 @@ public class JwtFilter  extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
+            // clearing the tenant Context after the request
             TenantContext.clear();
         }
 
     }
+
+    //Helper to sanitize username into valid db name
     private String sanitizeDatabaseName(String username) {
         return username.replaceAll("[^a-zA-Z0-9_]", "_").toLowerCase();
     }

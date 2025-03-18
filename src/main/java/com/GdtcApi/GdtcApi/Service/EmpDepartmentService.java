@@ -21,7 +21,8 @@ public class EmpDepartmentService implements IEmpDepartmentService {
     @Autowired
     EmpDepartmentRepo _empDepartmentRepo;
 
-    @Async
+
+    @Async("tenantAwareExecutor")
     @Transactional // this is used for rollback means if we got error and before it changed something it will roll back
     public CompletableFuture<EmpDepartmentResponse> upsertDepartmentAsync(EmpDepartmentRequest dto) {
         // Convert DTO to entity
@@ -52,7 +53,7 @@ public class EmpDepartmentService implements IEmpDepartmentService {
                 });
     }
 
-    @Async
+    @Async("tenantAwareExecutor")
     public CompletableFuture<EmpDepartmentResponse> getDepartmentByIdAsync(int id) {
         return CompletableFuture.supplyAsync(() -> {
             EmpDepartment department = _empDepartmentRepo.findById(id)
@@ -61,7 +62,7 @@ public class EmpDepartmentService implements IEmpDepartmentService {
         });
     }
 
-    @Async // Use Spring-managed thread pool
+    @Async("tenantAwareExecutor") // Use Spring-managed thread pool
     public CompletableFuture<List<EmpDepartmentResponse>> getAllDepartmentsAsync() {
         return CompletableFuture.supplyAsync(() -> {
             // Blocking JPA call wrapped in async
@@ -79,7 +80,7 @@ public class EmpDepartmentService implements IEmpDepartmentService {
         return _empDepartmentRepo.save(department);
     }
 
-    @Async
+    @Async("tenantAwareExecutor")
     public CompletableFuture<Boolean> deleteDepartmentAsync(int id) {
         return CompletableFuture.supplyAsync(() -> {
             _empDepartmentRepo.deleteById(id);
@@ -94,5 +95,11 @@ public class EmpDepartmentService implements IEmpDepartmentService {
         return departments.stream()
                 .map(EmpDepartmentResponse::MapToDto)
                 .collect(Collectors.toList());
+    }
+
+    public EmpDepartmentResponse addSyncDepartment(EmpDepartmentRequest empDepartmentRequest) {
+        EmpDepartment departmentEntity = EmpDepartmentRequest.MapToEntity(empDepartmentRequest);
+        EmpDepartment saved =  _empDepartmentRepo.save(departmentEntity);
+        return EmpDepartmentResponse.MapToDto(saved);
     }
 }

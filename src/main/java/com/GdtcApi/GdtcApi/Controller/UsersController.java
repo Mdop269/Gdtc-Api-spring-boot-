@@ -20,28 +20,34 @@ public class UsersController {
     @Autowired
     UsersService usersService;
 
+    //BCrypt encoder to hash passwords
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-//    @PostMapping("/register")
-//    public UsersResponse register( @Valid @RequestBody UsersRequest usersRequest)
-//    {
-//        System.out.println("Received user: " + usersRequest);
-//        usersRequest.setPassword(encoder.encode(usersRequest.getPassword()));
-//        return usersService.registerUser(usersRequest);
+//    // in this controler we create user record and tenant db
+//    @PostMapping("/register") // wont need for authentication
+//    public CompletableFuture<ResponseEntity<UsersResponse>> createUsers(
+//            @Valid @RequestBody UsersRequest usersRequest) {
+//        usersRequest.setPassword(encoder.encode(usersRequest.getPassword())); // in this we are encoding the password
+//        //calling the asynchronous password
+//        return usersService.upsertUsersAsync(usersRequest)
+//                .thenApply(savedUser ->
+//                        new ResponseEntity<>(savedUser, HttpStatus.CREATED)
+//                )
+//                .exceptionally(ex -> {
+//                    // Handle exceptions and return an appropriate error response
+//                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+//                });
 //    }
 
+
+    // in this controler we create user record and tenant db
     @PostMapping("/register") // wont need for authentication
-    public CompletableFuture<ResponseEntity<UsersResponse>> createUsers(
+    public ResponseEntity<UsersResponse> createUsers(
             @Valid @RequestBody UsersRequest usersRequest) {
         usersRequest.setPassword(encoder.encode(usersRequest.getPassword())); // in this we are encoding the password
-        return usersService.upsertUsersAsync(usersRequest)
-                .thenApply(savedUser ->
-                        new ResponseEntity<>(savedUser, HttpStatus.CREATED)
-                )
-                .exceptionally(ex -> {
-                    // Handle exceptions and return an appropriate error response
-                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-                });
+        //calling the asynchronous password
+        return new ResponseEntity<>(usersService.upsertUsers(usersRequest), HttpStatus.CREATED);
+
     }
 
 

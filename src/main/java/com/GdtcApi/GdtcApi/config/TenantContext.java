@@ -1,5 +1,6 @@
 package com.GdtcApi.GdtcApi.config;
 
+// ThreadLocal holder to keep track of the current tenant ( set in jwtfilter)
 public class TenantContext {
     private static final ThreadLocal<String> CURRENT_TENANT = new ThreadLocal<>();
 

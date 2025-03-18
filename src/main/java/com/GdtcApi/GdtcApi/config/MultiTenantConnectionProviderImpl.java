@@ -11,64 +11,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-//public class MultiTenantConnectionProviderImpl implements MultiTenantConnectionProvider<String> {
-//
-//    private final DataSource dataSource;
-//
-//    public MultiTenantConnectionProviderImpl(DataSource dataSource) {
-//        this.dataSource = dataSource;
-//    }
-//
-//    @Override
-//    public Connection getAnyConnection() throws SQLException {
-//        return dataSource.getConnection();
-//    }
-//
-//    @Override
-//    public void releaseAnyConnection(Connection connection) throws SQLException {
-//        connection.close();
-//    }
-//
-//    @Override
-//    public Connection getConnection(String tenantIdentifier) throws SQLException {
-//        String tenantId = TenantContext.getCurrentTenant();
-//        if(tenantId == null)
-//        {
-//            tenantId = "mdop";
-//        }
-//        String url = dataSource.getConnection().getMetaData().getURL();
-//        String newUrl = url.replaceFirst("/[^/]+$", "/" + tenantId);
-//
-//        return DataSourceBuilder.create()
-//                .url(newUrl)
-//                .username(dataSource.getConnection().getMetaData().getUserName())
-//                .password("postgres") // Use your actual password
-//                .build()
-//                .getConnection();
-//    }
-//
-//    @Override
-//    public void releaseConnection(String tenantIdentifier, Connection connection) throws SQLException {
-//        connection.close();
-//    }
-//
-//    @Override
-//    public boolean supportsAggressiveRelease() {
-//        return false;
-//    }
-//
-//    @Override
-//    public boolean isUnwrappableAs(Class unwrapType) {
-//        return false;
-//    }
-//
-//    @Override
-//    public <T> T unwrap(Class<T> unwrapType) {
-//        throw new UnsupportedOperationException("unwrap is not supported");
-//    }
-//}
-
-
+// provides a connection for the current tenant  based on the tenant identifier
 @Component // or @Service
 public class MultiTenantConnectionProviderImpl implements MultiTenantConnectionProvider<String> {
 
@@ -86,7 +29,6 @@ public class MultiTenantConnectionProviderImpl implements MultiTenantConnectionP
 
     @Override
     public Connection getAnyConnection() throws SQLException {
-        // Typically used for things like schema validation or some generic meta queries
         // We'll just connect to the default DB for "any" connection
         String url = baseUrl + DEFAULT_DB;
         return DriverManager.getConnection(url, tenantUsername, tenantPassword);

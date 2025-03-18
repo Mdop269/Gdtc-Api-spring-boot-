@@ -32,7 +32,7 @@ public class UsersDataIntializer {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             UsersRequest userRequest = objectMapper.readValue(json, UsersRequest.class);
-            usersService.upsertUsersAsync(userRequest);
+            usersService.upsertUsers(userRequest);
         } catch (Exception e) {
             e.printStackTrace();
         }
